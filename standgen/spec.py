@@ -49,6 +49,8 @@ class GripSpec:
     lean: float = 2.0            # degrees the slot leans back from vertical
     wall: float = 4.0            # material around the slot, mm
     slot_depth: float = 50.0     # how deep the slot runs, mm
+    align: str = "center"        # "center", "left", or "right"
+    tower: str = ""              # path to an STL to use instead of generating
 
     @property
     def slot_width(self) -> float:
@@ -72,7 +74,8 @@ class LogoSpec:
     """Raised lettering on the deck, printed in a second colour."""
 
     text: str = ""
-    size: float = 9.0            # cap height, mm
+    image: str = ""              # path to a PNG logo image (traced to geometry)
+    size: float = 9.0            # cap height (text) or target width (image), mm
     letter_height: float = 1.6   # how far letters stand off the deck, mm
     banner: bool = False         # draw a ribbon outline around the text
     banner_height: float = 2.0   # ribbon height off the deck, mm
@@ -81,13 +84,22 @@ class LogoSpec:
 
     @property
     def enabled(self) -> bool:
-        return bool(self.text) or self.banner
+        return bool(self.text) or bool(self.image) or self.banner
 
 
 @dataclass
 class PrintSpec:
     layer_height: float = 0.2
     snap_logo_to_layers: bool = True   # round logo heights to whole layers
+
+
+class DonorMissing(FileNotFoundError):
+    """A refit design's donor STL isn't present.
+
+    Donor models are usually third-party and often can't be redistributed, so
+    they're gitignored. Builds and tests treat this as "skip", not "fail" -
+    otherwise CI goes red for everyone who doesn't own a copy.
+    """
 
 
 @dataclass
@@ -162,6 +174,18 @@ def load(path: str | Path) -> StandSpec:
     if spec.mode == "refit" and spec.refit is None:
         raise ValueError(f"{path}: mode 'refit' requires a 'refit:' block")
 
+    # resolve the grip tower path relative to the design file
+    if spec.grip.tower:
+        p = Path(spec.grip.tower)
+        if not p.is_absolute():
+            spec.grip.tower = str((path.parent / p).resolve())
+
+    # resolve the image path relative to the design file
+    if spec.logo.image:
+        p = Path(spec.logo.image)
+        if not p.is_absolute():
+            spec.logo.image = str((path.parent / p).resolve())
+
     # resolve the donor path relative to the design file
     if spec.refit:
         d = Path(spec.refit.donor)
@@ -169,3 +193,10 @@ def load(path: str | Path) -> StandSpec:
             spec.refit.donor = str((path.parent / d).resolve())
 
     return spec.snapped()
+
+
+def donor_available(spec: StandSpec) -> bool:
+    """True if this design can actually be built here."""
+    if spec.mode != "refit" or spec.refit is None:
+        return True
+    return Path(spec.refit.donor).is_file()

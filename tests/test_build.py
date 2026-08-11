@@ -14,9 +14,17 @@ import trimesh
 
 from standgen import build_design, fittest, load
 from standgen.primitives import bad_edges
+from standgen.spec import donor_available
 
 ROOT = Path(__file__).resolve().parent.parent
 DESIGNS = sorted((ROOT / "designs").glob("*.yaml"))
+
+
+def needs_donor(spec):
+    """Refit designs can't be built without their (gitignored) donor STL."""
+    if not donor_available(spec):
+        pytest.skip(f"donor STL not present: {spec.refit.donor}")
+    return spec
 
 
 def pocket_sections(mesh, y, lo=15.0, hi=45.0):
@@ -44,7 +52,7 @@ def test_design_loads(design):
 
 @pytest.mark.parametrize("design", DESIGNS, ids=lambda p: p.stem)
 def test_parts_are_printable_solids(design):
-    for name, mesh, extruder in build_design(load(design)):
+    for name, mesh, extruder in build_design(needs_donor(load(design))):
         assert mesh.is_watertight, f"{name} is not watertight"
         assert bad_edges(mesh) == 0, f"{name} has non-manifold edges"
         assert mesh.volume > 0, f"{name} has non-positive volume"
@@ -53,7 +61,7 @@ def test_parts_are_printable_solids(design):
 
 @pytest.mark.parametrize("design", DESIGNS, ids=lambda p: p.stem)
 def test_pockets_match_requested_clearance(design):
-    spec = load(design)
+    spec = needs_donor(load(design))
     parts = build_design(spec)
     body = parts[0][1]
 
@@ -81,7 +89,7 @@ def test_pocket_walls_are_parallel_top_to_bottom(design):
     Counted per-pocket rather than by comparing whole slices, because other
     features (the grip slot) come and go at different heights.
     """
-    spec = load(design)
+    spec = needs_donor(load(design))
     body = build_design(spec)[0][1]
     floor, depth = spec.mag.floor, spec.mag.depth
 
@@ -137,7 +145,7 @@ def test_fit_test_coupon_is_full_depth(design):
 def test_refit_preserves_the_donor_envelope():
     """A refit must only change the pockets - never the outside of the model."""
     design = ROOT / "designs" / "walther_pdp.yaml"
-    spec = load(design)
+    spec = needs_donor(load(design))
     donor = trimesh.load(spec.refit.donor, force="mesh")
     body = build_design(spec)[0][1]
 
@@ -157,7 +165,7 @@ def test_clearance_moves_the_pocket_the_right_way(design):
     """
     sizes = {}
     for clearance in (0.20, 0.80):
-        spec = load(design)
+        spec = needs_donor(load(design))
         spec.mag.clearance = clearance
         body = build_design(spec)[0][1]
         probe = spec.mag.floor + spec.mag.depth * 0.5

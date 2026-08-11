@@ -99,7 +99,12 @@ def _logo(spec: StandSpec, cx: float, cz: float):
     if not logo.enabled:
         return []
 
-    glyphs = textmod.text_polygons(logo.text, logo.size) if logo.text else []
+    if logo.image:
+        glyphs = textmod.image_polygons(logo.image, logo.size)
+    elif logo.text:
+        glyphs = textmod.text_polygons(logo.text, logo.size)
+    else:
+        glyphs = []
     out = []
     if glyphs:
         placed = textmod.place(glyphs, cx, cz)
@@ -121,8 +126,15 @@ def build(spec: StandSpec):
 
     bar, bar_w, bar_d, _ = _mag_bar(spec)
 
-    tower_w = grip.slot_width + 2 * grip.wall
-    tower_d = grip.slot_thickness + 2 * grip.wall
+    # Determine tower dimensions — from donor STL or from grip measurements
+    if grip.tower:
+        donor_tower = trimesh.load(grip.tower)
+        tower_w = donor_tower.extents[0]
+        tower_d = donor_tower.extents[2]
+    else:
+        donor_tower = None
+        tower_w = grip.slot_width + 2 * grip.wall
+        tower_d = grip.slot_thickness + 2 * grip.wall
 
     deck_w = max(bar_w, tower_w + 2 * base.margin)
     deck_d = max(base.depth, bar_d + base.gap + tower_d + 2 * base.margin)
@@ -136,14 +148,35 @@ def build(spec: StandSpec):
 
     # mag bar sits at the front edge; tower sits behind the logo gap
     bar.apply_translation([(deck_w - bar_w) / 2, 0.0, 0.0])
-    tower_cx = deck_w / 2
+
+    # grip tower X position depends on alignment
+    if grip.align == "right":
+        tower_cx = deck_w - tower_w / 2 - base.margin
+    elif grip.align == "left":
+        tower_cx = tower_w / 2 + base.margin
+    else:
+        tower_cx = deck_w / 2
+
     tower_cz = bar_d + base.gap + tower_d / 2
-    tower = _grip_tower(spec, tower_cx, tower_cz)
+
+    if donor_tower is not None:
+        # Donor tower is centred at X=0, Y starts at 0, Z centred at 0.
+        donor_tower.apply_translation([tower_cx, 0.0, tower_cz])
+        tower = donor_tower
+    else:
+        tower = _grip_tower(spec, tower_cx, tower_cz)
 
     body = prim.union([deck, bar, tower])
 
-    logo_cz = bar_d + base.gap / 2
-    features = _logo(spec, deck_w / 2, logo_cz)
+    # logo placement: beside the tower when aligned, or centred in the gap
+    logo_cz = bar_d + (base.gap + tower_d) / 2
+    if grip.align == "right":
+        logo_cx = (tower_cx - tower_w / 2) / 2  # centred in the space left of the tower
+    elif grip.align == "left":
+        logo_cx = (tower_cx + deck_w) / 2  # right half
+    else:
+        logo_cx = deck_w / 2
+    features = _logo(spec, logo_cx, logo_cz)
     if features:
         body = prim.difference(body, [m for _, m in features])   # keep them separable
 

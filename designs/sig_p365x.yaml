@@ -1,0 +1,41 @@
+# SIG P365X - generated from measurements, no donor STL.
+# Workflow: measure -> `--fit-test` -> print the coupon -> set `clearance`.
+name: sig_p365x
+mode: generate
+
+mag:
+  width: 32.0
+  thickness: 20.45
+  count: 3
+  clearance: 0.25         # verified with fit-test coupon
+  depth: 36.0
+  floor: 4.0
+  chamfer: 1.0
+
+grip:
+  width: 33.34
+  thickness: 21.12
+  clearance: 0.6
+  height: 56.0
+  lean: 2.0
+  wall: 4.0
+  slot_depth: 50.0
+  align: right
+  tower: ../donors/grip_tower_walther.stl
+
+base:
+  thickness: 6.0
+  depth: 80.0
+  gap: 18.0
+
+logo:
+  image: ../logos/SIG-BRAND-MARK_500x500.png
+  size: 36.0              # target width of the logo on the deck, mm
+  letter_height: 1.6
+  banner: false           # the SIG mark is already circular
+
+printing:
+  layer_height: 0.2
+  snap_logo_to_layers: true
+
+fit_test_clearances: [0.25, 0.40, 0.60]

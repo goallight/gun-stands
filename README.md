@@ -76,10 +76,27 @@ drops into place.
 
 | File | Mode | Notes |
 |---|---|---|
-| `designs/walther_pdp.yaml` | refit | Verified against a printed part. 0.25 mm clearance. |
+| `designs/walther_pdp.yaml` | refit | Verified against a printed part. 0.25 mm clearance. Needs a donor (below). |
 | `designs/glock19_example.yaml` | generate | **Placeholder numbers.** Measure before printing. |
 
 Adding a gun is a new YAML in `designs/`. Nothing else needs to change.
+
+### Donor STLs are not in the repo
+
+`donors/*.stl` is gitignored — donor models are third-party and usually can't
+be redistributed. So a fresh clone can't build refit designs until you supply
+the mesh yourself:
+
+```
+donors/PDP_Stand_V1.stl      <- drop your own copy here
+```
+
+Without it, `build.py` prints `skipped - donor STL not present` and moves on,
+and the donor-dependent tests skip rather than fail. That keeps CI green on a
+clone while still exercising the generator, the coupon builder, and every
+design that doesn't need a donor. Generated designs are unaffected, and
+`--fit-test` works for every design regardless, since a coupon is built from
+measurements alone.
 
 ## Repo layout
 

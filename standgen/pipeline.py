@@ -3,15 +3,25 @@ from __future__ import annotations
 
 import trimesh
 
+from pathlib import Path
+
 from . import primitives as prim
 from . import refit as refitmod
-from .spec import StandSpec
+from .spec import DonorMissing, StandSpec
 
 
 def refit_design(spec: StandSpec):
     """Resize the donor's pockets, then peel the deck logo into its own colour."""
     cfg = spec.refit
     assert cfg is not None
+
+    if not Path(cfg.donor).is_file():
+        raise DonorMissing(
+            f"donor STL not found: {cfg.donor}\n"
+            f"  Refit designs need their donor model locally. Donors are "
+            f"gitignored because they're usually not redistributable - drop "
+            f"your copy at that path and rebuild."
+        )
 
     donor = trimesh.load(cfg.donor, force="mesh")
     prim.check(donor, f"donor {cfg.donor}")

@@ -1,9 +1,12 @@
 """Text and banner outlines for the deck logo."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
+from PIL import Image
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
 
@@ -18,6 +21,50 @@ def text_polygons(text: str, size: float, font: str = "DejaVu Sans",
     if not rings:
         raise ValueError(f"font produced no outlines for {text!r}")
     geom = unary_union(nest_rings(rings))
+    return [geom] if geom.geom_type == "Polygon" else list(geom.geoms)
+
+
+def image_polygons(path: str, target_width: float, threshold: int = 128):
+    """Trace a PNG image into shapely polygons, scaled to *target_width* mm.
+
+    Dark pixels become solid geometry; light pixels become background. The
+    contours are extracted with contourpy and assembled into polygons with
+    holes using the same nest_rings helper that text_polygons uses.
+    """
+    from contourpy import contour_generator
+
+    img = Image.open(path).convert("L")
+    arr = np.array(img, dtype=float)
+    # invert so dark = high value (solid), then normalise to 0-1
+    arr = 1.0 - arr / 255.0
+
+    gen = contour_generator(
+        z=arr,
+        line_type="SeparateCode",
+    )
+    result = gen.lines(0.5)
+    lines, codes = result
+
+    rings = [np.asarray(line) for line in lines if len(line) >= 4]
+    if not rings:
+        raise ValueError(f"no contours found in {path}")
+
+    # scale from pixel coords to mm, fitting within target_width
+    all_pts = np.vstack(rings)
+    px_w = all_pts[:, 0].max() - all_pts[:, 0].min()
+    px_h = all_pts[:, 1].max() - all_pts[:, 1].min()
+    scale = target_width / max(px_w, px_h)
+
+    scaled = []
+    x_min, x_max = all_pts[:, 0].min(), all_pts[:, 0].max()
+    y_min, y_max = all_pts[:, 1].min(), all_pts[:, 1].max()
+    for r in rings:
+        pts = r.copy()
+        pts[:, 0] = (pts[:, 0] - x_min) * scale
+        pts[:, 1] = (y_max - pts[:, 1]) * scale
+        scaled.append(pts)
+
+    geom = unary_union(nest_rings(scaled))
     return [geom] if geom.geom_type == "Polygon" else list(geom.geoms)
 
 
