@@ -1,0 +1,28 @@
+# Walther PDP - refit of an existing stand model.
+# Pockets are recut on the donor STL so everything else stays byte-identical.
+name: walther_pdp
+mode: refit
+
+mag:
+  width: 31.75         # measured across the mag body
+  thickness: 20.45
+  count: 3
+  clearance: 0.25      # total; 0.125 per side. Verified with the fit-test coupon.
+  chamfer: 1.0
+
+logo:
+  # The donor already carries the Walther banner. These heights are applied to
+  # the features found on the deck: tallest -> banner_height, rest -> letters.
+  letter_height: 1.6   # 8 layers at 0.2 mm - enough to stop black bleeding through
+  banner_height: 2.0   # 10 layers
+  banner: true
+
+printing:
+  layer_height: 0.2
+  snap_logo_to_layers: true
+
+refit:
+  donor: ../donors/PDP_Stand_V1.stl
+  logo_region: [185, 255, 398, 421]   # x0, x1, z0, z1 on the deck
+
+fit_test_clearances: [0.25, 0.40, 0.60]

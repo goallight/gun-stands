@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Run geometry tests
+        run: python -m pytest tests/ -q
+
+      - name: Build every design
+        run: python build.py --all -o out/
+
+      - name: Build fit-test coupons
+        run: python build.py --all --fit-test -o out/
+
+      - name: Upload printable files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stands
+          path: out/
+          if-no-files-found: error

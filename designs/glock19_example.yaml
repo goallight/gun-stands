@@ -1,0 +1,40 @@
+# Glock 19 - generated from measurements, no donor STL.
+# EVERY number here is a placeholder until you measure your own mags and grip.
+# Workflow: measure -> `--fit-test` -> print the coupon -> set `clearance`.
+name: glock19_example
+mode: generate
+
+mag:
+  width: 29.0          # MEASURE THIS - calipers across the mag body
+  thickness: 21.5      # MEASURE THIS
+  count: 3
+  clearance: 0.25      # start here, confirm with the fit-test coupon
+  depth: 36.0
+  floor: 4.0
+  chamfer: 1.0
+
+grip:
+  width: 32.0          # MEASURE THIS - grip front-to-back where it sits
+  thickness: 20.0      # MEASURE THIS - grip side-to-side
+  clearance: 0.6       # grips taper, so run these looser than the mags
+  height: 56.0
+  lean: 2.0            # degrees the slot leans back
+  wall: 4.0
+  slot_depth: 50.0
+
+base:
+  thickness: 6.0
+  depth: 80.0
+  gap: 18.0            # clear deck between mag bar and grip tower
+
+logo:
+  text: "GLOCK 19"
+  size: 8.0
+  letter_height: 1.6
+  banner: true
+  banner_height: 2.0
+
+printing:
+  layer_height: 0.2
+
+fit_test_clearances: [0.20, 0.30, 0.45]
