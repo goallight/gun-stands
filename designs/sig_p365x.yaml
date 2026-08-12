@@ -17,7 +17,7 @@ grip:
   thickness: 21.12
   clearance: 0.6
   height: 56.0
-  lean: 2.0
+  lean: 13.0              # similar to Walther PDP grip angle
   wall: 4.0
   slot_depth: 50.0
   align: right

@@ -15,6 +15,7 @@ import trimesh
 
 from standgen import build_design, load
 from standgen import fittest
+from standgen import leantest
 from standgen.export import write_bambu_3mf, write_stl
 from standgen.primitives import bad_edges
 from standgen.spec import DonorMissing, donor_available
@@ -82,13 +83,13 @@ def render_preview(parts, outpath: Path) -> None:
 
 
 def build_one(design: Path, outdir: Path, fit_test: bool, bed,
-              preview: bool = False) -> int:
+              preview: bool = False, lean_test: bool = False) -> int:
     spec = load(design)
     print(f"\n{spec.name}  ({spec.mode})")
 
-    # A fit-test coupon is generated from measurements alone, so it still
-    # builds without a donor. Only the stand itself needs one.
-    if not fit_test and not donor_available(spec):
+    # Coupons are generated from measurements alone, so they still
+    # build without a donor. Only the stand itself needs one.
+    if not (fit_test or lean_test) and not donor_available(spec):
         print(f"    skipped - donor STL not present ({spec.refit.donor})")
         return 0
 
@@ -99,7 +100,12 @@ def build_one(design: Path, outdir: Path, fit_test: bool, bed,
           f"{spec.mag.pocket_width:.2f} x {spec.mag.pocket_thickness:.2f} mm")
 
     problems = 0
-    if fit_test:
+    if lean_test:
+        coupon = leantest.build(spec)
+        report("lean-test coupon", coupon)
+        write_stl(coupon, target / f"{spec.name}_lean_test.stl")
+        problems += bad_edges(coupon)
+    elif fit_test:
         coupon = fittest.build(spec)
         report("fit-test coupon", coupon)
         write_stl(coupon, target / f"{spec.name}_fit_test.stl")
@@ -136,6 +142,8 @@ def main(argv=None) -> int:
     ap.add_argument("-o", "--outdir", default="out", help="output directory")
     ap.add_argument("--fit-test", action="store_true",
                     help="build the clearance coupon instead of the stand")
+    ap.add_argument("--lean-test", action="store_true",
+                    help="build the grip angle coupon instead of the stand")
     ap.add_argument("--preview", action="store_true",
                     help="render a top-down PNG preview of the stand")
     ap.add_argument("--bed", default="256x256", help="bed size for 3MF centring")
@@ -154,7 +162,8 @@ def main(argv=None) -> int:
     for design in designs:
         try:
             problems += build_one(design, outdir, args.fit_test, bed,
-                                  preview=args.preview)
+                                  preview=args.preview,
+                                  lean_test=args.lean_test)
         except DonorMissing as exc:
             print(f"\n{design}: skipped - {exc}")
         except Exception as exc:                       # noqa: BLE001

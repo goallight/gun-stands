@@ -49,31 +49,44 @@ def _mag_bar(spec: StandSpec):
 
 
 def _grip_tower(spec: StandSpec, cx: float, cz: float):
-    """A leaning blade with a slot the grip wedges into."""
+    """A leaning blade with a slot the grip wedges into.
+
+    The entire tower leans backward at `grip.lean` degrees so the pistol
+    sits at its natural grip angle. The base is clipped flat at the deck.
+    """
     grip = spec.grip
     sw, st = grip.slot_width, grip.slot_thickness
     w = sw + 2 * grip.wall
     d = st + 2 * grip.wall
     h = grip.height
     lean = np.radians(grip.lean)
+    base_y = spec.base.thickness
 
-    # tapered tower: full section at the base, slightly narrower at the top
+    # Build the tower body and slot at the origin, then lean the whole thing.
     top_scale = 0.86
-    lower = prim.box(w + 6, spec.base.thickness + 4, d + 6,
-                     [cx, (spec.base.thickness + 4) / 2, cz])   # fillet-ish foot
-    body = _tapered_box(cx, cz, w, d, w * top_scale, d * top_scale,
-                        spec.base.thickness, spec.base.thickness + h)
-    tower = prim.union([lower, body])
+    body = _tapered_box(0, 0, w, d, w * top_scale, d * top_scale, 0, h)
 
-    # slot: a tall box, tilted about X so its top leans toward the back (+Z)
     slot_h = grip.slot_depth + 4
-    slot_top = spec.base.thickness + h + 2
-    slot = prim.box(sw, slot_h, st, [0, 0, 0])
-    tilt = trimesh.transformations.rotation_matrix(lean, [1, 0, 0])
-    slot.apply_transform(tilt)
-    slot.apply_translation([cx, slot_top - slot_h / 2, cz])
+    slot = prim.box(sw, slot_h, st, [0, h + 2 - slot_h / 2, 0])
 
-    return prim.difference(tower, [slot])
+    tower = prim.difference(body, [slot])
+
+    # Lean the tower backward (rotate about X axis at the base)
+    tilt = trimesh.transformations.rotation_matrix(lean, [1, 0, 0])
+    tower.apply_transform(tilt)
+
+    # Clip off anything below y=0 so the base sits flat on the deck
+    clip = prim.box(w + 20, h + 20, d + h, [0, -(h + 20) / 2, 0])
+    tower = prim.difference(tower, [clip])
+
+    # Add a wide foot for stability
+    foot = prim.box(w + 6, base_y + 4, d + 6, [0, (base_y + 4) / 2, 0])
+    tower = prim.union([foot, tower])
+
+    # Move to final position on the deck
+    tower.apply_translation([cx, base_y, cz])
+
+    return tower
 
 
 def _tapered_box(cx, cz, w0, d0, w1, d1, y0, y1) -> trimesh.Trimesh:

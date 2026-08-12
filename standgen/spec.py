@@ -124,6 +124,7 @@ class StandSpec:
     printing: PrintSpec = field(default_factory=PrintSpec)
     refit: RefitSpec | None = None
     fit_test_clearances: list[float] = field(default_factory=lambda: [0.25, 0.40, 0.60])
+    lean_test_angles: list[float] = field(default_factory=lambda: [10, 13, 16, 19, 22])
 
     # ---- layer snapping -------------------------------------------------
     def snapped(self) -> "StandSpec":
