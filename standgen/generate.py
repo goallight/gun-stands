@@ -71,12 +71,14 @@ def _grip_tower(spec: StandSpec, cx: float, cz: float):
 
     tower = prim.difference(body, [slot])
 
-    # Lean the tower backward (rotate about X axis at the base)
-    tilt = trimesh.transformations.rotation_matrix(lean, [1, 0, 0])
+    # Lean the tower sideways (rotate about Z axis at the base) so the
+    # grip slot matches the pistol's natural grip angle. Positive lean
+    # tilts the top to the left (-X) when viewed from the front.
+    tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
     tower.apply_transform(tilt)
 
     # Clip off anything below y=0 so the base sits flat on the deck
-    clip = prim.box(w + 20, h + 20, d + h, [0, -(h + 20) / 2, 0])
+    clip = prim.box(w + h, h + 20, d + h, [0, -(h + 20) / 2, 0])
     tower = prim.difference(tower, [clip])
 
     # Add a wide foot for stability
