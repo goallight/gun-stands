@@ -14,8 +14,10 @@ Two ways to make a stand:
 pip install -r requirements.txt
 
 python build.py designs/walther_pdp.yaml            # STLs + .3mf into out/
-python build.py designs/walther_pdp.yaml --fit-test # clearance coupon
-python build.py --all                               # everything in designs/
+python build.py designs/walther_pdp.yaml --fit-test  # clearance coupon
+python build.py designs/glock19.yaml --lean-test     # grip angle coupon
+python build.py designs/sig_p365x.yaml --preview     # build + top-down PNG
+python build.py --all                                # everything in designs/
 ```
 
 ## The clearance workflow
@@ -42,6 +44,39 @@ sides. `0.25` means 0.125 mm per side. Reference points from the Walther PDP:
 Print the coupon with the exact filament and profile you'll use for the stand.
 A different spool or a flow tweak can eat 0.125 mm of clearance on its own.
 
+## The grip angle workflow
+
+The grip tower lean angle matters as much as pocket clearance. Every pistol
+has a different grip angle, and guessing from spec sheets doesn't work — the
+stand slot lean depends on how the gun actually rests, not just the number on
+paper.
+
+1. `python build.py designs/yours.yaml --lean-test` and print the coupon.
+   It carries one slot per candidate angle (default 10, 13, 16, 19, 22
+   degrees), each labeled on the back face.
+2. Drop the grip into each slot and pick the angle where it sits flush with
+   the most contact.
+3. Put that number in `grip.lean` and build the stand.
+
+`lean_test_angles` in the YAML controls which angles the coupon includes.
+
+## Image logos
+
+Logos can be either text strings or PNG images. Text logos use
+`logo.text` and `logo.size` (cap height). Image logos use `logo.image`
+(path to a PNG) and `logo.size` (target width in mm).
+
+Dark pixels become solid geometry; light pixels become background. The image
+is traced into vector contours and extruded onto the deck as a separate colour
+body, same as text logos.
+
+Tips for image logos:
+- Crop the image tight to the logo. Whitespace or small distant features
+  (like a registered trademark symbol) stretch the bounding box and shrink
+  the actual logo.
+- Convert transparent PNGs to a white background first, or the tracer may
+  pick up gray from the alpha channel.
+
 ## Two-colour logos
 
 `logo.letter_height` and `logo.banner_height` are how far the lettering stands
@@ -56,6 +91,18 @@ rounding down. A test enforces this.
 Purge volume matters as much as height. Light-onto-dark is the worst-case
 flush direction; under ~250 mm³ the first layers stay tinted no matter how
 tall the feature is.
+
+## Grip tower options
+
+Generated stands build a grip tower from the `grip` measurements. Two extra
+options control the layout:
+
+- **`grip.align`** — `center` (default), `left`, or `right`. Shifts the tower
+  to one side of the deck, leaving room for the logo beside it.
+- **`grip.tower`** — path to an STL to use instead of generating a tower. The
+  STL should be centred at X=0, Y=0 at the base, Z=0 centred. Use this to
+  reuse a known-good tower shape across designs (e.g. the Walther tower works
+  for the P365X).
 
 ## Slicer notes
 
@@ -72,20 +119,28 @@ If you'd rather assemble by hand: load `<name>_stand.stl`, right-click the
 object, **Add part → Load**, and pick the logo STL. They share an origin, so it
 drops into place.
 
+## Preview
+
+`--preview` generates a top-down PNG alongside the STLs, showing the stand
+layout with the logo highlighted. Useful for checking placement before
+printing.
+
 ## Designs
 
 | File | Mode | Notes |
 |---|---|---|
 | `designs/walther_pdp.yaml` | refit | Verified against a printed part. 0.25 mm clearance. Needs a donor (below). |
+| `designs/sig_p365x.yaml` | generate | Verified. 0.25 mm clearance. Uses Walther donor grip tower. SIG brand mark logo. |
+| `designs/glock19.yaml` | generate | Measured dimensions. Verify clearance and lean angle with coupons before printing. |
 | `designs/glock19_example.yaml` | generate | **Placeholder numbers.** Measure before printing. |
 
 Adding a gun is a new YAML in `designs/`. Nothing else needs to change.
 
 ### Donor STLs are not in the repo
 
-`donors/*.stl` is gitignored — donor models are third-party and usually can't
-be redistributed. So a fresh clone can't build refit designs until you supply
-the mesh yourself:
+`donors/` is gitignored — donor models are third-party and usually can't be
+redistributed. So a fresh clone can't build refit designs until you supply the
+mesh yourself:
 
 ```
 donors/PDP_Stand_V1.stl      <- drop your own copy here
@@ -95,8 +150,8 @@ Without it, `build.py` prints `skipped - donor STL not present` and moves on,
 and the donor-dependent tests skip rather than fail. That keeps CI green on a
 clone while still exercising the generator, the coupon builder, and every
 design that doesn't need a donor. Generated designs are unaffected, and
-`--fit-test` works for every design regardless, since a coupon is built from
-measurements alone.
+`--fit-test` and `--lean-test` work for every design regardless, since coupons
+are built from measurements alone.
 
 ## Repo layout
 
@@ -106,12 +161,15 @@ standgen/
   spec.py              YAML -> dataclasses, layer snapping
   primitives.py        boxes, chamfer cutters, ring nesting, solidity checks
   refit.py             pocket detection, pocket resizing, logo splitting
-  generate.py          from-scratch stand
+  generate.py          from-scratch stand (with lean + alignment support)
   fittest.py           clearance coupon
-  text.py              glyph outlines and banner rings
+  leantest.py          grip angle coupon
+  text.py              glyph outlines, banner rings, and image logo tracing
   export.py            STL + Bambu 3MF writer
 designs/               one YAML per gun
-donors/                donor STLs for refit designs
+donors/                donor STLs for refit designs (gitignored)
+logos/                 PNG logo images for image-based logos
+parts/                 derived geometry (e.g. extracted grip towers)
 tests/                 geometry regressions
 ```
 
@@ -131,10 +189,7 @@ artifacts, so a green run means printable files are one click away.
 
 ## Known rough edges
 
-- The generated grip tower is a tapered blade with a straight slot. It holds a
-  pistol, but it has none of the contouring a hand-modelled stand has. The
-  refit path is the one to use when a good donor model exists.
 - Pocket detection assumes axis-aligned rectangular pockets with vertical
   walls. If it misses, list them explicitly under `refit.pockets`.
-- `donors/` contains third-party models. Check their licence before pushing
-  this repo public.
+- Image logo tracing works best with clean, high-contrast PNGs. Noisy or
+  low-resolution images may produce ragged contours.
