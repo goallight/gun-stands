@@ -1,8 +1,8 @@
 """A coupon for dialling in grip tower lean angle before printing a stand.
 
-Prints one slot per candidate angle, at the same slot dimensions and wall
-thicknesses as the real part, with the angle embossed on the deck.
-Drop the grip into each slot and pick the one where it sits flush.
+Prints one slot per candidate angle with thin walls (2 mm) so the grip
+slides on easily. The test is about angle, not fitment — the walls just
+need to be stiff enough to check which lean feels flush.
 
 Towers are arranged front-to-back (along Z) so the sideways lean of each
 tower doesn't interfere with its neighbours.
@@ -24,10 +24,10 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
         raise ValueError("need at least one lean angle to test")
 
     sw, st = grip.slot_width, grip.slot_thickness
-    wall = grip.wall
-    w = sw + 2 * wall          # tower section width
-    d = st + 2 * wall          # tower section depth
-    h = grip.slot_depth + 10   # tall enough to test the grip
+    test_wall = 2.0                # thin walls — just enough to check angle
+    w = sw + 2 * test_wall         # tower section width
+    d = st + 2 * test_wall         # tower section depth
+    h = 35.0                       # short tower — enough to read the angle
     base_y = spec.base.thickness
 
     # The lean spreads the tower in X. Size the coupon width for the worst case.
@@ -37,23 +37,25 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
 
     # Towers front-to-back with a small gap between them
     gap = 4.0
-    total_z = gap + len(angles) * (d + 6 + gap)  # d+6 for the foot
+    foot_extra = 4.0               # foot overhang per side
+    total_z = gap + len(angles) * (d + foot_extra + gap)
 
     # Base plate
     base = prim.box(total_x, base_y, total_z,
                     [total_x / 2, base_y / 2, total_z / 2])
 
     towers = [base]
-    z = gap + (d + 6) / 2
+    z = gap + (d + foot_extra) / 2
     for angle in angles:
         lean = np.radians(angle)
         cx = total_x / 2
 
-        # Build tower section with foot, lean it, clip it
-        foot = prim.box(w + 6, base_y + 4, d + 6, [0, (base_y + 4) / 2, 0])
+        # Build a thin-walled tower section with foot, lean it, clip it
+        foot = prim.box(w + foot_extra, base_y + 2, d + foot_extra,
+                        [0, (base_y + 2) / 2, 0])
         body = prim.box(w, h, d, [0, base_y + h / 2, 0])
-        slot = prim.box(sw, grip.slot_depth + 4, st,
-                        [0, base_y + h + 2 - (grip.slot_depth + 4) / 2, 0])
+        slot = prim.box(sw, h + 4, st,
+                        [0, base_y + h / 2, 0])
         section = prim.difference(prim.union([foot, body]), [slot])
 
         tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
@@ -71,7 +73,7 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
         label = prim.prism_from_polygons(placed, base_y, 1.2)
         towers.append(label)
 
-        z += d + 6 + gap
+        z += d + foot_extra + gap
 
     coupon = prim.union(towers)
     return prim.check(coupon, "lean test coupon")
