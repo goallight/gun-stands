@@ -21,7 +21,7 @@ grip:
   wall: 4.0
   slot_depth: 50.0
   align: right
-  tower: ../donors/grip_tower_walther.stl
+  tower: ../parts/grip_tower_walther.stl
 
 base:
   thickness: 6.0
