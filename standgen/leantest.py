@@ -24,10 +24,11 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
         raise ValueError("need at least one lean angle to test")
 
     # The grip width/thickness are the INSIDE dimensions (magazine well).
-    # The blade must be smaller so it slides in.
-    clearance = grip.clearance
-    bw = grip.width - clearance    # blade width (front-to-back inside grip)
-    bd = grip.thickness - clearance  # blade depth (side-to-side inside grip)
+    # Use extra clearance so blades slide on/off easily — this test is
+    # about angle, not fitment.
+    test_clearance = max(grip.clearance, 1.5)
+    bw = grip.width - test_clearance
+    bd = grip.thickness - test_clearance
     h = 35.0                       # short blade — enough to read the angle
     base_y = spec.base.thickness
 
