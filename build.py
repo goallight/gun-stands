@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build stands and fit-test coupons from design files.
 
-    python build.py designs/walther_pdp.yaml
-    python build.py designs/walther_pdp.yaml --fit-test
-    python build.py --all -o out/
+    python build.py specs/walther_pdp.yaml
+    python build.py specs/walther_pdp.yaml --fit-test
+    python build.py --all -o builds/
 """
 from __future__ import annotations
 
@@ -138,8 +138,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("design", nargs="*", help="design YAML file(s)")
-    ap.add_argument("--all", action="store_true", help="build everything in designs/")
-    ap.add_argument("-o", "--outdir", default="out", help="output directory")
+    ap.add_argument("--all", action="store_true", help="build everything in specs/")
+    ap.add_argument("-o", "--outdir", default="builds", help="output directory")
     ap.add_argument("--fit-test", action="store_true",
                     help="build the clearance coupon instead of the stand")
     ap.add_argument("--lean-test", action="store_true",
@@ -151,7 +151,7 @@ def main(argv=None) -> int:
 
     designs = [Path(d) for d in args.design]
     if args.all:
-        designs = sorted(Path("designs").glob("*.yaml"))
+        designs = sorted(Path("specs").glob("*.yaml"))
     if not designs:
         ap.error("give a design file or --all")
 

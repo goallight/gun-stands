@@ -17,7 +17,7 @@ from standgen.primitives import bad_edges
 from standgen.spec import donor_available
 
 ROOT = Path(__file__).resolve().parent.parent
-DESIGNS = sorted((ROOT / "designs").glob("*.yaml"))
+DESIGNS = sorted((ROOT / "specs").glob("*.yaml"))
 
 
 def needs_donor(spec):
@@ -144,7 +144,7 @@ def test_fit_test_coupon_is_full_depth(design):
 
 def test_refit_preserves_the_donor_envelope():
     """A refit must only change the pockets - never the outside of the model."""
-    design = ROOT / "designs" / "walther_pdp.yaml"
+    design = ROOT / "specs" / "walther_pdp.yaml"
     spec = needs_donor(load(design))
     donor = trimesh.load(spec.refit.donor, force="mesh")
     body = build_design(spec)[0][1]

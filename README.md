@@ -13,11 +13,11 @@ Two ways to make a stand:
 ```bash
 pip install -r requirements.txt
 
-python build.py designs/walther_pdp.yaml            # STLs + .3mf into out/
-python build.py designs/walther_pdp.yaml --fit-test  # clearance coupon
-python build.py designs/glock19.yaml --lean-test     # grip angle coupon
-python build.py designs/sig_p365x.yaml --preview     # build + top-down PNG
-python build.py --all                                # everything in designs/
+python build.py specs/walther_pdp.yaml            # STLs + .3mf into builds/
+python build.py specs/walther_pdp.yaml --fit-test  # clearance coupon
+python build.py specs/glock19.yaml --lean-test     # grip angle coupon
+python build.py specs/sig_p365x.yaml --preview     # build + top-down PNG
+python build.py --all                                # everything in specs/
 ```
 
 ## The clearance workflow
@@ -26,7 +26,7 @@ This is the part worth being disciplined about. Pocket fit is the whole design.
 
 1. Measure the magazine cross-section with calipers. Put it in `mag.width`
    (long dimension) and `mag.thickness` (short one).
-2. `python build.py designs/yours.yaml --fit-test` and print the coupon.
+2. `python build.py specs/yours.yaml --fit-test` and print the coupon.
    It carries one pocket per candidate clearance, at **full depth** and with
    the same wall thicknesses as the real stand.
 3. Drop a mag in each pocket, pick the one you like, put that number in
@@ -51,7 +51,7 @@ has a different grip angle, and guessing from spec sheets doesn't work — the
 stand slot lean depends on how the gun actually rests, not just the number on
 paper.
 
-1. `python build.py designs/yours.yaml --lean-test` and print the coupon.
+1. `python build.py specs/yours.yaml --lean-test` and print the coupon.
    It carries one slot per candidate angle (default 10, 13, 16, 19, 22
    degrees), each labeled on the back face.
 2. Drop the grip into each slot and pick the angle where it sits flush with
@@ -106,7 +106,7 @@ options control the layout:
 
 ## Slicer notes
 
-`out/<name>/<name>.3mf` opens in Bambu Studio or OrcaSlicer as **one object
+`builds/<name>/<name>.3mf` opens in Bambu Studio or OrcaSlicer as **one object
 with named parts**, filaments already assigned, oriented flat on the bed.
 
 Generic 3MF exporters do not do this — Bambu reads them as plain geometry and
@@ -129,12 +129,12 @@ printing.
 
 | File | Mode | Notes |
 |---|---|---|
-| `designs/walther_pdp.yaml` | refit | Verified against a printed part. 0.25 mm clearance. Needs a donor (below). |
-| `designs/sig_p365x.yaml` | generate | Verified. 0.25 mm clearance. Uses Walther donor grip tower. SIG brand mark logo. |
-| `designs/glock19.yaml` | generate | Measured dimensions. Verify clearance and lean angle with coupons before printing. |
-| `designs/glock19_example.yaml` | generate | **Placeholder numbers.** Measure before printing. |
+| `specs/walther_pdp.yaml` | refit | Verified against a printed part. 0.25 mm clearance. Needs a donor (below). |
+| `specs/sig_p365x.yaml` | generate | Verified. 0.25 mm clearance. Uses Walther donor grip tower. SIG brand mark logo. |
+| `specs/glock19.yaml` | generate | Measured dimensions. Verify clearance and lean angle with coupons before printing. |
+| `specs/glock19_example.yaml` | generate | **Placeholder numbers.** Measure before printing. |
 
-Adding a gun is a new YAML in `designs/`. Nothing else needs to change.
+Adding a gun is a new YAML in `specs/`. Nothing else needs to change.
 
 ### Donor STLs are not in the repo
 
@@ -166,7 +166,7 @@ standgen/
   leantest.py          grip angle coupon
   text.py              glyph outlines, banner rings, and image logo tracing
   export.py            STL + Bambu 3MF writer
-designs/               one YAML per gun
+specs/                 one YAML per gun
 donors/                donor STLs for refit designs (gitignored)
 logos/                 PNG logo images for image-based logos
 parts/                 derived geometry (e.g. extracted grip towers)
