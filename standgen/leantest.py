@@ -39,24 +39,21 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
 
     # Blades front-to-back with a gap between them
     gap = 6.0
-    foot_extra = 6.0
-    total_z = gap + len(angles) * (bd + foot_extra + gap)
+    total_z = gap + len(angles) * (bd + gap)
 
     # Base plate
     base = prim.box(total_x, base_y, total_z,
                     [total_x / 2, base_y / 2, total_z / 2])
 
     parts = [base]
-    z = gap + (bd + foot_extra) / 2
+    z = gap + bd / 2
     for angle in angles:
         lean = np.radians(angle)
         cx = total_x / 2
 
-        # Build a blade with a foot, lean it, clip it
-        foot = prim.box(bw + foot_extra, base_y + 2, bd + foot_extra,
-                        [0, (base_y + 2) / 2, 0])
-        blade = prim.box(bw, h, bd, [0, base_y + h / 2, 0])
-        section = prim.union([foot, blade])
+        # Build a blade, lean it, clip below deck
+        blade = prim.box(bw, h + base_y, bd, [0, (h + base_y) / 2, 0])
+        section = blade
 
         tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
         section.apply_transform(tilt)
@@ -73,7 +70,7 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
         label = prim.prism_from_polygons(placed, base_y, 1.2)
         parts.append(label)
 
-        z += bd + foot_extra + gap
+        z += bd + gap
 
     coupon = prim.union(parts)
     return prim.check(coupon, "lean test coupon")
