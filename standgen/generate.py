@@ -62,14 +62,17 @@ def _grip_tower(spec: StandSpec, cx: float, cz: float):
     lean = np.radians(grip.lean)
     base_y = spec.base.thickness
 
-    # Build the tower body and slot at the origin, then lean the whole thing.
+    # Build the tower body with foot at the origin, then lean the whole
+    # thing together so the foot transitions flush into the leaned body.
     top_scale = 0.86
-    body = _tapered_box(0, 0, w, d, w * top_scale, d * top_scale, 0, h)
+    foot = prim.box(w + 6, base_y + 4, d + 6, [0, (base_y + 4) / 2, 0])
+    body = _tapered_box(0, 0, w, d, w * top_scale, d * top_scale,
+                        base_y, base_y + h)
+    tower = prim.union([foot, body])
 
     slot_h = grip.slot_depth + 4
-    slot = prim.box(sw, slot_h, st, [0, h + 2 - slot_h / 2, 0])
-
-    tower = prim.difference(body, [slot])
+    slot = prim.box(sw, slot_h, st, [0, base_y + h + 2 - slot_h / 2, 0])
+    tower = prim.difference(tower, [slot])
 
     # Lean the tower sideways (rotate about Z axis at the base) so the
     # grip slot matches the pistol's natural grip angle. Positive lean
@@ -81,12 +84,8 @@ def _grip_tower(spec: StandSpec, cx: float, cz: float):
     clip = prim.box(w + h, h + 20, d + h, [0, -(h + 20) / 2, 0])
     tower = prim.difference(tower, [clip])
 
-    # Add a wide foot for stability
-    foot = prim.box(w + 6, base_y + 4, d + 6, [0, (base_y + 4) / 2, 0])
-    tower = prim.union([foot, tower])
-
     # Move to final position on the deck
-    tower.apply_translation([cx, base_y, cz])
+    tower.apply_translation([cx, 0, cz])
 
     return tower
 
