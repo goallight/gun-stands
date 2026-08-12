@@ -37,8 +37,8 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
     lean_shift = h * np.sin(np.radians(max_lean))
     total_x = bw + lean_shift + 16
 
-    # Blades front-to-back with a gap between them
-    gap = 6.0
+    # Blades front-to-back with enough gap for flared magwells
+    gap = 20.0
     total_z = gap + len(angles) * (bd + gap)
 
     # Base plate
