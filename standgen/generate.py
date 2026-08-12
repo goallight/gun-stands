@@ -49,39 +49,36 @@ def _mag_bar(spec: StandSpec):
 
 
 def _grip_tower(spec: StandSpec, cx: float, cz: float):
-    """A leaning blade with a slot the grip wedges into.
+    """A leaning blade the grip slides over.
 
-    The entire tower leans backward at `grip.lean` degrees so the pistol
-    sits at its natural grip angle. The base is clipped flat at the deck.
+    The blade is sized to the inside grip dimensions (magazine well) minus
+    clearance. The entire tower leans sideways at `grip.lean` degrees so
+    the pistol sits at its natural grip angle. The base is clipped flat.
     """
     grip = spec.grip
-    sw, st = grip.slot_width, grip.slot_thickness
-    w = sw + 2 * grip.wall
-    d = st + 2 * grip.wall
+    # Blade fits INSIDE the grip — subtract clearance from inside dimensions
+    bw = grip.width - grip.clearance
+    bd = grip.thickness - grip.clearance
     h = grip.height
     lean = np.radians(grip.lean)
     base_y = spec.base.thickness
 
-    # Build the tower body with foot at the origin, then lean the whole
-    # thing together so the foot transitions flush into the leaned body.
-    top_scale = 0.86
-    foot = prim.box(w + 6, base_y + 4, d + 6, [0, (base_y + 4) / 2, 0])
-    body = _tapered_box(0, 0, w, d, w * top_scale, d * top_scale,
-                        base_y, base_y + h)
-    tower = prim.union([foot, body])
-
-    slot_h = grip.slot_depth + 4
-    slot = prim.box(sw, slot_h, st, [0, base_y + h + 2 - slot_h / 2, 0])
-    tower = prim.difference(tower, [slot])
+    # Build the blade with a wider foot at the origin, then lean the whole
+    # thing together so the foot transitions flush into the leaned blade.
+    foot_extra = 6.0
+    foot = prim.box(bw + foot_extra, base_y + 4, bd + foot_extra,
+                    [0, (base_y + 4) / 2, 0])
+    blade = prim.box(bw, h, bd, [0, base_y + h / 2, 0])
+    tower = prim.union([foot, blade])
 
     # Lean the tower sideways (rotate about Z axis at the base) so the
-    # grip slot matches the pistol's natural grip angle. Positive lean
+    # blade matches the pistol's natural grip angle. Positive lean
     # tilts the top to the left (-X) when viewed from the front.
     tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
     tower.apply_transform(tilt)
 
     # Clip off anything below y=0 so the base sits flat on the deck
-    clip = prim.box(w + h, h + 20, d + h, [0, -(h + 20) / 2, 0])
+    clip = prim.box(bw + h, h + 20, bd + h, [0, -(h + 20) / 2, 0])
     tower = prim.difference(tower, [clip])
 
     # Move to final position on the deck
@@ -147,8 +144,9 @@ def build(spec: StandSpec):
         tower_d = donor_tower.extents[2]
     else:
         donor_tower = None
-        tower_w = grip.slot_width + 2 * grip.wall
-        tower_d = grip.slot_thickness + 2 * grip.wall
+        # Blade fits inside the grip; foot adds extra around the base
+        tower_w = grip.width - grip.clearance + 6
+        tower_d = grip.thickness - grip.clearance + 6
 
     deck_w = max(bar_w, tower_w + 2 * base.margin)
     deck_d = max(base.depth, bar_d + base.gap + tower_d + 2 * base.margin)

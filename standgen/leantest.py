@@ -1,11 +1,11 @@
 """A coupon for dialling in grip tower lean angle before printing a stand.
 
-Prints one slot per candidate angle with thin walls (2 mm) so the grip
-slides on easily. The test is about angle, not fitment — the walls just
-need to be stiff enough to check which lean feels flush.
+Prints one blade per candidate angle, sized to fit inside the grip
+(magazine well). Slide the grip over each blade and pick the angle
+where it sits flush.
 
-Towers are arranged front-to-back (along Z) so the sideways lean of each
-tower doesn't interfere with its neighbours.
+Blades are arranged front-to-back (along Z) so the sideways lean of each
+blade doesn't interfere with its neighbours.
 """
 from __future__ import annotations
 
@@ -23,57 +23,56 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
     if not angles:
         raise ValueError("need at least one lean angle to test")
 
-    sw, st = grip.slot_width, grip.slot_thickness
-    test_wall = 2.0                # thin walls — just enough to check angle
-    w = sw + 2 * test_wall         # tower section width
-    d = st + 2 * test_wall         # tower section depth
-    h = 35.0                       # short tower — enough to read the angle
+    # The grip width/thickness are the INSIDE dimensions (magazine well).
+    # The blade must be smaller so it slides in.
+    clearance = grip.clearance
+    bw = grip.width - clearance    # blade width (front-to-back inside grip)
+    bd = grip.thickness - clearance  # blade depth (side-to-side inside grip)
+    h = 35.0                       # short blade — enough to read the angle
     base_y = spec.base.thickness
 
-    # The lean spreads the tower in X. Size the coupon width for the worst case.
+    # The lean spreads the blade in X. Size the coupon width for the worst case.
     max_lean = max(angles)
     lean_shift = h * np.sin(np.radians(max_lean))
-    total_x = w + lean_shift + 12
+    total_x = bw + lean_shift + 16
 
-    # Towers front-to-back with a small gap between them
-    gap = 4.0
-    foot_extra = 4.0               # foot overhang per side
-    total_z = gap + len(angles) * (d + foot_extra + gap)
+    # Blades front-to-back with a gap between them
+    gap = 6.0
+    foot_extra = 6.0
+    total_z = gap + len(angles) * (bd + foot_extra + gap)
 
     # Base plate
     base = prim.box(total_x, base_y, total_z,
                     [total_x / 2, base_y / 2, total_z / 2])
 
-    towers = [base]
-    z = gap + (d + foot_extra) / 2
+    parts = [base]
+    z = gap + (bd + foot_extra) / 2
     for angle in angles:
         lean = np.radians(angle)
         cx = total_x / 2
 
-        # Build a thin-walled tower section with foot, lean it, clip it
-        foot = prim.box(w + foot_extra, base_y + 2, d + foot_extra,
+        # Build a blade with a foot, lean it, clip it
+        foot = prim.box(bw + foot_extra, base_y + 2, bd + foot_extra,
                         [0, (base_y + 2) / 2, 0])
-        body = prim.box(w, h, d, [0, base_y + h / 2, 0])
-        slot = prim.box(sw, h + 4, st,
-                        [0, base_y + h / 2, 0])
-        section = prim.difference(prim.union([foot, body]), [slot])
+        blade = prim.box(bw, h, bd, [0, base_y + h / 2, 0])
+        section = prim.union([foot, blade])
 
         tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
         section.apply_transform(tilt)
 
-        clip = prim.box(w + h, h + 20, d + h, [0, -(h + 20) / 2, 0])
+        clip = prim.box(bw + h, h + 20, bd + h, [0, -(h + 20) / 2, 0])
         section = prim.difference(section, [clip])
 
         section.apply_translation([cx, 0, z])
-        towers.append(section)
+        parts.append(section)
 
-        # Emboss the angle label on the deck beside the tower
+        # Emboss the angle label on the deck beside the blade
         glyphs = textmod.text_polygons(f"{angle:.0f}", label_size)
         placed = textmod.place(glyphs, total_x - label_size, z)
         label = prim.prism_from_polygons(placed, base_y, 1.2)
-        towers.append(label)
+        parts.append(label)
 
-        z += d + foot_extra + gap
+        z += bd + foot_extra + gap
 
-    coupon = prim.union(towers)
+    coupon = prim.union(parts)
     return prim.check(coupon, "lean test coupon")
