@@ -7,7 +7,7 @@ mag:
   width: 33.20
   thickness: 22.75
   count: 3
-  clearance: 0.25         # start here, confirm with the fit-test coupon
+  clearance: 0.25         # verified with fit-test coupon
   depth: 36.0
   floor: 4.0
   chamfer: 1.0
