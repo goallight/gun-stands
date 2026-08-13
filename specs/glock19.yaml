@@ -15,7 +15,7 @@ mag:
 grip:
   width: 34.65
   thickness: 23.40
-  clearance: 0.6
+  clearance: 2.5
   height: 56.0
   lean: 16.0              # verified with lean-test coupon
   wall: 4.0
