@@ -17,7 +17,7 @@ grip:
   thickness: 23.40
   clearance: 0.6
   height: 56.0
-  lean: 18.0              # VERIFY with --lean-test coupon
+  lean: 16.0              # verified with lean-test coupon
   wall: 4.0
   slot_depth: 50.0
   align: right

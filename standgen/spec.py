@@ -168,6 +168,7 @@ def load(path: str | Path) -> StandSpec:
         printing=_build(PrintSpec, raw.get("printing")),
         refit=_build(RefitSpec, raw["refit"]) if raw.get("refit") else None,
         fit_test_clearances=raw.get("fit_test_clearances", [0.25, 0.40, 0.60]),
+        lean_test_angles=raw.get("lean_test_angles", [10, 13, 16, 19, 22]),
     )
 
     if spec.mode not in ("generate", "refit"):
