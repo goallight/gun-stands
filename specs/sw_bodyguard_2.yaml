@@ -1,6 +1,7 @@
 # Smith & Wesson Bodyguard 2.0 (.380 ACP)
+# Note: this is the Bodyguard 2.0, NOT the original Bodyguard
 # Workflow: measure -> --fit-test -> print coupon -> set clearance
-name: sw_bodyguard
+name: sw_bodyguard_2
 mode: generate
 
 mag:
