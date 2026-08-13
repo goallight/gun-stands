@@ -63,13 +63,9 @@ def _grip_tower(spec: StandSpec, cx: float, cz: float):
     lean = np.radians(grip.lean)
     base_y = spec.base.thickness
 
-    # Build the blade with a wider foot at the origin, then lean the whole
-    # thing together so the foot transitions flush into the leaned blade.
-    foot_extra = 6.0
-    foot = prim.box(bw + foot_extra, base_y + 4, bd + foot_extra,
-                    [0, (base_y + 4) / 2, 0])
+    # Build the blade from deck height upward, then lean the whole thing.
     blade = prim.box(bw, h, bd, [0, base_y + h / 2, 0])
-    tower = prim.union([foot, blade])
+    tower = blade
 
     # Lean the tower sideways (rotate about Z axis at the base) so the
     # blade matches the pistol's natural grip angle. Positive lean
