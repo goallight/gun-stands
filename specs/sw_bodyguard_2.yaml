@@ -28,7 +28,7 @@ base:
 
 logo:
   image: ../logos/SmithWesson-logo.jpg
-  size: 36.0
+  size: 50.0
   letter_height: 1.6
   banner: false
 
@@ -36,5 +36,5 @@ printing:
   layer_height: 0.2
   snap_logo_to_layers: true
 
-fit_test_clearances: [0.25, 0.40, 0.60]
+fit_test_clearances: [0.10, 0.15, 0.20]
 lean_test_angles: [10, 13, 16, 19, 22]

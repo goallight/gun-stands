@@ -62,9 +62,9 @@ paper.
 
 ## Image logos
 
-Logos can be either text strings or PNG images. Text logos use
+Logos can be either text strings or image files. Text logos use
 `logo.text` and `logo.size` (cap height). Image logos use `logo.image`
-(path to a PNG) and `logo.size` (target width in mm).
+(path to an image — PNG, JPEG, etc.) and `logo.size` (target width in mm).
 
 Dark pixels become solid geometry; light pixels become background. The image
 is traced into vector contours and extruded onto the deck as a separate colour
@@ -74,8 +74,8 @@ Tips for image logos:
 - Crop the image tight to the logo. Whitespace or small distant features
   (like a registered trademark symbol) stretch the bounding box and shrink
   the actual logo.
-- Convert transparent PNGs to a white background first, or the tracer may
-  pick up gray from the alpha channel.
+- For transparent PNGs, convert to a white background first, or the tracer
+  may pick up gray from the alpha channel.
 
 ## Two-colour logos
 
@@ -131,7 +131,8 @@ printing.
 |---|---|---|
 | `specs/walther_pdp.yaml` | refit | Verified against a printed part. 0.25 mm clearance. Needs a donor (below). |
 | `specs/sig_p365x.yaml` | generate | Verified. 0.25 mm clearance. Uses Walther donor grip tower. SIG brand mark logo. |
-| `specs/glock19.yaml` | generate | Measured dimensions. Verify clearance and lean angle with coupons before printing. |
+| `specs/glock19.yaml` | generate | Verified. 0.25 mm mag clearance, 16° lean. Glock logo. |
+| `specs/sw_bodyguard_2.yaml` | generate | S&W Bodyguard 2.0 (.380 ACP). S&W logo. Verify clearance with coupon. |
 | `specs/glock19_example.yaml` | generate | **Placeholder numbers.** Measure before printing. |
 
 Adding a gun is a new YAML in `specs/`. Nothing else needs to change.
@@ -161,6 +162,7 @@ standgen/
   spec.py              YAML -> dataclasses, layer snapping
   primitives.py        boxes, chamfer cutters, ring nesting, solidity checks
   refit.py             pocket detection, pocket resizing, logo splitting
+  pipeline.py          mode dispatcher (generate vs refit)
   generate.py          from-scratch stand (with lean + alignment support)
   fittest.py           clearance coupon
   leantest.py          grip angle coupon
@@ -168,8 +170,9 @@ standgen/
   export.py            STL + Bambu 3MF writer
 specs/                 one YAML per gun
 donors/                donor STLs for refit designs (gitignored)
-logos/                 PNG logo images for image-based logos
+logos/                 logo images for image-based logos
 parts/                 derived geometry (e.g. extracted grip towers)
+docs/                  design notes and session logs
 tests/                 geometry regressions
 ```
 
@@ -191,5 +194,5 @@ artifacts, so a green run means printable files are one click away.
 
 - Pocket detection assumes axis-aligned rectangular pockets with vertical
   walls. If it misses, list them explicitly under `refit.pockets`.
-- Image logo tracing works best with clean, high-contrast PNGs. Noisy or
+- Image logo tracing works best with clean, high-contrast images. Noisy or
   low-resolution images may produce ragged contours.

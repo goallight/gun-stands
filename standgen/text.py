@@ -25,7 +25,7 @@ def text_polygons(text: str, size: float, font: str = "DejaVu Sans",
 
 
 def image_polygons(path: str, target_width: float, threshold: int = 128):
-    """Trace a PNG image into shapely polygons, scaled to *target_width* mm.
+    """Trace an image into shapely polygons, scaled to *target_width* mm.
 
     Dark pixels become solid geometry; light pixels become background. The
     contours are extracted with contourpy and assembled into polygons with
