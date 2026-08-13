@@ -63,9 +63,28 @@ def _grip_tower(spec: StandSpec, cx: float, cz: float):
     lean = np.radians(grip.lean)
     base_y = spec.base.thickness
 
-    # Build the blade from deck height upward, then lean the whole thing.
-    blade = prim.box(bw, h, bd, [0, base_y + h / 2, 0])
-    tower = blade
+    # Build the blade from y=0 upward so that after leaning and clipping
+    # at the deck surface, the back of the blade meets the deck with no gap.
+    chamfer = 3.0
+    body_h = h - chamfer
+    blade = prim.box(bw, base_y + body_h, bd, [0, (base_y + body_h) / 2, 0])
+    tip_top = base_y + h
+    tip_bot = tip_top - chamfer
+    tip_w, tip_d = bw - 2 * chamfer, bd - 2 * chamfer
+    verts = []
+    for hw, hd, y in ((bw / 2, bd / 2, tip_bot), (tip_w / 2, tip_d / 2, tip_top)):
+        verts += [[-hw, y, -hd], [hw, y, -hd],
+                  [hw, y, hd], [-hw, y, hd]]
+    faces = []
+    for k in range(4):
+        j = (k + 1) % 4
+        faces += [[k, j, 4 + j], [k, 4 + j, 4 + k]]
+    faces += [[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7]]
+    tip = trimesh.Trimesh(vertices=np.array(verts, dtype=float),
+                          faces=np.array(faces))
+    if tip.volume < 0:
+        tip.invert()
+    tower = prim.union([blade, tip])
 
     # Lean the tower sideways (rotate about Z axis at the base) so the
     # blade matches the pistol's natural grip angle. Positive lean
@@ -73,8 +92,8 @@ def _grip_tower(spec: StandSpec, cx: float, cz: float):
     tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
     tower.apply_transform(tilt)
 
-    # Clip off anything below y=0 so the base sits flat on the deck
-    clip = prim.box(bw + h, h + 20, bd + h, [0, -(h + 20) / 2, 0])
+    # Clip off anything below the deck surface so the blade sits flush
+    clip = prim.box(bw + h, h + 20, bd + h, [0, base_y - (h + 20) / 2, 0])
     tower = prim.difference(tower, [clip])
 
     # Move to final position on the deck
