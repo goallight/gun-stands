@@ -1,0 +1,39 @@
+# Smith & Wesson Bodyguard 2.0 (.380 ACP)
+# Workflow: measure -> --fit-test -> print coupon -> set clearance
+name: sw_bodyguard
+mode: generate
+
+mag:
+  width: 27.70
+  thickness: 18.35
+  count: 3
+  clearance: 0.25         # VERIFY with fit-test coupon
+  depth: 36.0
+  floor: 4.0
+  chamfer: 1.0
+
+grip:
+  width: 28.05
+  thickness: 19.00
+  clearance: 2.5
+  height: 46.0
+  lean: 13.0              # standard grip angle, same as SIG/Walther
+  align: right
+
+base:
+  thickness: 6.0
+  depth: 80.0
+  gap: 18.0
+
+logo:
+  image: ../logos/SmithWesson-logo.jpg
+  size: 36.0
+  letter_height: 1.6
+  banner: false
+
+printing:
+  layer_height: 0.2
+  snap_logo_to_layers: true
+
+fit_test_clearances: [0.25, 0.40, 0.60]
+lean_test_angles: [10, 13, 16, 19, 22]
