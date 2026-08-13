@@ -24,12 +24,13 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
         raise ValueError("need at least one lean angle to test")
 
     # The grip width/thickness are the INSIDE dimensions (magazine well).
-    # Use extra clearance so blades slide on/off easily — this test is
+    # Use generous clearance so blades slide on/off easily — this test is
     # about angle, not fitment.
-    test_clearance = max(grip.clearance, 1.5)
+    test_clearance = max(grip.clearance, 2.0)
     bw = grip.width - test_clearance
     bd = grip.thickness - test_clearance
     h = 35.0                       # short blade — enough to read the angle
+    chamfer = 3.0                  # top-edge chamfer to guide into magwell
     base_y = spec.base.thickness
 
     # The lean spreads the blade in X. Size the coupon width for the worst case.
@@ -51,9 +52,25 @@ def build(spec: StandSpec, angles=None, label_size: float = 6.0):
         lean = np.radians(angle)
         cx = total_x / 2
 
-        # Build a blade, lean it, clip below deck
-        blade = prim.box(bw, h + base_y, bd, [0, (h + base_y) / 2, 0])
-        section = blade
+        # Build a blade with a tapered tip so it guides into the magwell
+        body_h = h + base_y - chamfer
+        blade = prim.box(bw, body_h, bd, [0, body_h / 2, 0])
+        # Tapered cap: full size at bottom, narrower at top
+        tip_w, tip_d = bw - 2 * chamfer, bd - 2 * chamfer
+        verts = []
+        for hw, hd, y in ((bw/2, bd/2, body_h), (tip_w/2, tip_d/2, body_h + chamfer)):
+            verts += [[-hw, y, -hd], [hw, y, -hd],
+                      [hw, y, hd], [-hw, y, hd]]
+        faces = []
+        for k in range(4):
+            j = (k + 1) % 4
+            faces += [[k, j, 4+j], [k, 4+j, 4+k]]
+        faces += [[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7]]
+        tip = trimesh.Trimesh(vertices=np.array(verts, dtype=float),
+                              faces=np.array(faces))
+        if tip.volume < 0:
+            tip.invert()
+        section = prim.union([blade, tip])
 
         tilt = trimesh.transformations.rotation_matrix(lean, [0, 0, 1])
         section.apply_transform(tilt)

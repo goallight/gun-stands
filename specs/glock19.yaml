@@ -38,3 +38,4 @@ printing:
   snap_logo_to_layers: true
 
 fit_test_clearances: [0.25, 0.40, 0.60]
+lean_test_angles: [16, 19, 22]
